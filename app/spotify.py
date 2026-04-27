@@ -44,3 +44,47 @@ def exchange_code(code: str, redirect_uri: str) -> str:
     )
     response.raise_for_status()
     return response.json()["access_token"]
+
+
+SPOTIFY_API_BASE = "https://api.spotify.com/v1"
+
+
+class SpotifyAuthError(Exception):
+    pass
+
+
+def _ms_to_duration(ms: int) -> str:
+    seconds = ms // 1000
+    return f"{seconds // 60}:{seconds % 60:02d}"
+
+
+def get_playlist_tracks(token: str, playlist_id: str) -> tuple:
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.get(f"{SPOTIFY_API_BASE}/playlists/{playlist_id}", headers=headers)
+    if response.status_code == 401:
+        raise SpotifyAuthError("Spotify token expired or invalid")
+    data = response.json()
+    playlist_name = data["name"]
+    tracks = []
+    page = data["tracks"]
+    while page:
+        for item in page.get("items", []):
+            t = item.get("track")
+            if not t:
+                continue
+            tracks.append({
+                "track_number": t["track_number"],
+                "name": t["name"],
+                "artist": t["artists"][0]["name"],
+                "album": t["album"]["name"],
+                "duration": _ms_to_duration(t["duration_ms"]),
+            })
+        next_url = page.get("next")
+        if next_url:
+            response = requests.get(next_url, headers=headers)
+            if response.status_code == 401:
+                raise SpotifyAuthError("Spotify token expired or invalid")
+            page = response.json()
+        else:
+            page = None
+    return playlist_name, tracks

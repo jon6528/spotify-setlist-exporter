@@ -68,3 +68,70 @@ def test_exchange_code_raises_on_http_error(monkeypatch):
         from app.spotify import exchange_code
         with pytest.raises(Exception):
             exchange_code(code="bad", redirect_uri="http://localhost:8000/callback")
+
+
+# Task 5: get_playlist_tracks
+def _make_item(name, artist, album, track_number, duration_ms):
+    return {
+        "track": {
+            "name": name,
+            "track_number": track_number,
+            "duration_ms": duration_ms,
+            "artists": [{"name": artist}],
+            "album": {"name": album},
+        }
+    }
+
+
+def test_get_playlist_tracks_single_page():
+    playlist_data = {
+        "name": "My Playlist",
+        "tracks": {
+            "items": [_make_item("Song A", "Artist A", "Album A", 3, 200000)],
+            "next": None,
+        },
+    }
+    mock_resp = Mock(status_code=200)
+    mock_resp.json.return_value = playlist_data
+    with patch("app.spotify.requests.get", return_value=mock_resp):
+        from app.spotify import get_playlist_tracks
+        name, tracks = get_playlist_tracks(token="tok", playlist_id="abc")
+    assert name == "My Playlist"
+    assert tracks == [{
+        "track_number": 3,
+        "name": "Song A",
+        "artist": "Artist A",
+        "album": "Album A",
+        "duration": "3:20",
+    }]
+
+
+def test_get_playlist_tracks_paginates():
+    page1 = {
+        "name": "Big Playlist",
+        "tracks": {
+            "items": [_make_item("Song A", "Artist A", "Album A", 1, 60000)],
+            "next": "https://api.spotify.com/v1/playlists/abc/tracks?offset=100",
+        },
+    }
+    page2 = {
+        "items": [_make_item("Song B", "Artist B", "Album B", 2, 120000)],
+        "next": None,
+    }
+    mock1 = Mock(status_code=200)
+    mock1.json.return_value = page1
+    mock2 = Mock(status_code=200)
+    mock2.json.return_value = page2
+    with patch("app.spotify.requests.get", side_effect=[mock1, mock2]):
+        from app.spotify import get_playlist_tracks
+        name, tracks = get_playlist_tracks(token="tok", playlist_id="abc")
+    assert len(tracks) == 2
+    assert tracks[1]["name"] == "Song B"
+
+
+def test_get_playlist_tracks_raises_auth_error_on_401():
+    mock_resp = Mock(status_code=401)
+    with patch("app.spotify.requests.get", return_value=mock_resp):
+        from app.spotify import get_playlist_tracks, SpotifyAuthError
+        with pytest.raises(SpotifyAuthError):
+            get_playlist_tracks(token="expired", playlist_id="abc")
