@@ -21,3 +21,28 @@ def test_login_redirects_to_spotify(client, monkeypatch):
     resp = client.get("/login", follow_redirects=False)
     assert resp.status_code in (302, 307)
     assert "accounts.spotify.com" in resp.headers["location"]
+
+
+def test_callback_stores_token_and_redirects(client, monkeypatch):
+    monkeypatch.setattr("app.spotify.exchange_code", lambda code, redirect_uri: "my_token")
+    resp = client.get("/callback", params={"code": "authcode"}, follow_redirects=False)
+    assert resp.status_code in (302, 307)
+    assert resp.headers["location"] == "/"
+    resp2 = client.get("/")
+    assert 'action="/playlist"' in resp2.text
+
+
+def test_callback_with_error_param_redirects_home(client):
+    resp = client.get("/callback", params={"error": "access_denied"}, follow_redirects=False)
+    assert resp.status_code in (302, 307)
+    assert resp.headers["location"] == "/"
+
+
+def test_callback_clears_session_on_exchange_failure(client, monkeypatch):
+    def bad_exchange(code, redirect_uri):
+        raise Exception("token exchange failed")
+
+    monkeypatch.setattr("app.spotify.exchange_code", bad_exchange)
+    client.get("/callback", params={"code": "bad_code"}, follow_redirects=False)
+    resp = client.get("/")
+    assert "Login with Spotify" in resp.text
