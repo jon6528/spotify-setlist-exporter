@@ -73,3 +73,30 @@ def load_playlist(request: Request, playlist_url: str = Form(...)):
             "tracks": tracks,
         },
     )
+
+
+@app.get("/export")
+def export_csv(request: Request):
+    token = request.session.get("access_token")
+    playlist_id = request.session.get("playlist_id")
+    playlist_name = request.session.get("playlist_name", "playlist")
+    if not token or not playlist_id:
+        return RedirectResponse("/")
+    try:
+        _, tracks = spotify.get_playlist_tracks(token=token, playlist_id=playlist_id)
+    except spotify.SpotifyAuthError:
+        request.session.clear()
+        return RedirectResponse("/")
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Track Number", "Track Name", "Artist", "Album", "Track Length"])
+    for t in tracks:
+        writer.writerow([t["track_number"], t["name"], t["artist"], t["album"], t["duration"]])
+    filename = re.sub(r"[^\w\s-]", "", playlist_name).strip().lower()
+    filename = re.sub(r"\s+", "-", filename)
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}.csv"'},
+    )

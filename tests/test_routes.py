@@ -111,3 +111,43 @@ def test_playlist_clears_session_on_auth_error(authed_client, monkeypatch):
         follow_redirects=False,
     )
     assert resp.status_code in (302, 303, 307)
+
+
+def _load_playlist(authed_client, monkeypatch):
+    monkeypatch.setattr("app.spotify.parse_playlist_id", lambda url: "abc123")
+    monkeypatch.setattr(
+        "app.spotify.get_playlist_tracks",
+        lambda token, playlist_id: ("My Jams", MOCK_TRACKS),
+    )
+    authed_client.post(
+        "/playlist", data={"playlist_url": "https://open.spotify.com/playlist/abc123"}
+    )
+
+
+def test_export_returns_csv(authed_client, monkeypatch):
+    _load_playlist(authed_client, monkeypatch)
+    monkeypatch.setattr(
+        "app.spotify.get_playlist_tracks",
+        lambda token, playlist_id: ("My Jams", MOCK_TRACKS),
+    )
+    resp = authed_client.get("/export")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/csv")
+    assert "Track Number,Track Name,Artist,Album,Track Length" in resp.text
+    assert "Blinding Lights" in resp.text
+    assert "6" in resp.text
+
+
+def test_export_filename_uses_playlist_name(authed_client, monkeypatch):
+    _load_playlist(authed_client, monkeypatch)
+    monkeypatch.setattr(
+        "app.spotify.get_playlist_tracks",
+        lambda token, playlist_id: ("My Jams", MOCK_TRACKS),
+    )
+    resp = authed_client.get("/export")
+    assert "my-jams.csv" in resp.headers.get("content-disposition", "")
+
+
+def test_export_redirects_if_no_session(client):
+    resp = client.get("/export", follow_redirects=False)
+    assert resp.status_code in (302, 307)
