@@ -1,2 +1,27 @@
 {% extends "base.html" %}
-{% block content %}home{% endblock %}
+
+{% block nav_extra %}
+{% if logged_in %}
+<form class="url-form" method="post" action="/playlist">
+  <input class="url-input" type="text" name="playlist_url"
+    placeholder="https://open.spotify.com/playlist/...">
+  <button class="btn btn-sm" type="submit">Load</button>
+</form>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if logged_in %}
+<div class="hero">
+  <h1>Paste a playlist link above</h1>
+  <p>Load any Spotify playlist to preview and export its tracks as a CSV.</p>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+</div>
+{% else %}
+<div class="hero">
+  <h1>Export your Spotify playlist</h1>
+  <p>Paste any playlist link and download a CSV with all your tracks.</p>
+  <a href="/login" class="btn">&#9654; Login with Spotify</a>
+</div>
+{% endif %}
+{% endblock %}

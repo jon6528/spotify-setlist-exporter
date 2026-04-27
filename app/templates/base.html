@@ -2,10 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Setlist Exporter</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+<nav>
+  <span class="logo">&#9679;</span>
+  <span class="wordmark">SETLIST EXPORTER</span>
+  {% block nav_extra %}{% endblock %}
+</nav>
 {% block content %}{% endblock %}
 </body>
 </html>
