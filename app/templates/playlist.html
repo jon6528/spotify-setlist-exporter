@@ -1,2 +1,41 @@
 {% extends "base.html" %}
-{% block content %}playlist{% endblock %}
+
+{% block nav_extra %}
+<form class="url-form" method="post" action="/playlist">
+  <input class="url-input" type="text" name="playlist_url"
+    placeholder="https://open.spotify.com/playlist/...">
+  <button class="btn btn-sm" type="submit">Load</button>
+</form>
+{% endblock %}
+
+{% block content %}
+<div class="playlist-header">
+  <h2>{{ playlist_name }}</h2>
+  <p>{{ track_count }} tracks</p>
+</div>
+<table class="track-table">
+  <thead>
+    <tr>
+      <th class="track-num">#</th>
+      <th>Title</th>
+      <th>Artist</th>
+      <th>Album</th>
+      <th class="track-duration">&#9201;</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for t in tracks %}
+  <tr>
+    <td class="track-num">{{ t.track_number }}</td>
+    <td class="track-name">{{ t.name }}</td>
+    <td class="track-artist">{{ t.artist }}</td>
+    <td class="track-album">{{ t.album }}</td>
+    <td class="track-duration">{{ t.duration }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<div class="export-bar">
+  <a href="/export" class="btn">&#11015; Export CSV</a>
+</div>
+{% endblock %}

@@ -46,3 +46,68 @@ def test_callback_clears_session_on_exchange_failure(client, monkeypatch):
     client.get("/callback", params={"code": "bad_code"}, follow_redirects=False)
     resp = client.get("/")
     assert "Login with Spotify" in resp.text
+
+
+from app import spotify as _spotify
+
+MOCK_TRACKS = [
+    {
+        "track_number": 6,
+        "name": "Blinding Lights",
+        "artist": "The Weeknd",
+        "album": "After Hours",
+        "duration": "3:20",
+    }
+]
+
+
+def test_playlist_renders_track_table(authed_client, monkeypatch):
+    monkeypatch.setattr("app.spotify.parse_playlist_id", lambda url: "playlist123")
+    monkeypatch.setattr(
+        "app.spotify.get_playlist_tracks",
+        lambda token, playlist_id: ("Today's Top Hits", MOCK_TRACKS),
+    )
+    resp = authed_client.post(
+        "/playlist",
+        data={"playlist_url": "https://open.spotify.com/playlist/playlist123"},
+    )
+    assert resp.status_code == 200
+    assert "Blinding Lights" in resp.text
+    assert "The Weeknd" in resp.text
+    assert "After Hours" in resp.text
+
+
+def test_playlist_redirects_if_not_logged_in(client):
+    resp = client.post(
+        "/playlist",
+        data={"playlist_url": "https://open.spotify.com/playlist/abc"},
+        follow_redirects=False,
+    )
+    assert resp.status_code in (302, 303, 307)
+
+
+def test_playlist_shows_error_on_invalid_url(authed_client, monkeypatch):
+    def bad_parse(url):
+        raise ValueError("Invalid Spotify playlist URL")
+
+    monkeypatch.setattr("app.spotify.parse_playlist_id", bad_parse)
+    resp = authed_client.post(
+        "/playlist", data={"playlist_url": "https://example.com/not-spotify"}
+    )
+    assert resp.status_code == 200
+    assert "Invalid Spotify playlist URL" in resp.text
+
+
+def test_playlist_clears_session_on_auth_error(authed_client, monkeypatch):
+    monkeypatch.setattr("app.spotify.parse_playlist_id", lambda url: "abc")
+
+    def expired(token, playlist_id):
+        raise _spotify.SpotifyAuthError("expired")
+
+    monkeypatch.setattr("app.spotify.get_playlist_tracks", expired)
+    resp = authed_client.post(
+        "/playlist",
+        data={"playlist_url": "https://open.spotify.com/playlist/abc"},
+        follow_redirects=False,
+    )
+    assert resp.status_code in (302, 303, 307)

@@ -44,3 +44,32 @@ def callback(request: Request, code: str = None, error: str = None):
     except Exception:
         request.session.clear()
     return RedirectResponse("/")
+
+
+@app.post("/playlist", response_class=HTMLResponse)
+def load_playlist(request: Request, playlist_url: str = Form(...)):
+    token = request.session.get("access_token")
+    if not token:
+        return RedirectResponse("/", status_code=303)
+    try:
+        playlist_id = spotify.parse_playlist_id(playlist_url)
+        playlist_name, tracks = spotify.get_playlist_tracks(token=token, playlist_id=playlist_id)
+        request.session["playlist_id"] = playlist_id
+        request.session["playlist_name"] = playlist_name
+    except spotify.SpotifyAuthError:
+        request.session.clear()
+        return RedirectResponse("/", status_code=303)
+    except ValueError as e:
+        return templates.TemplateResponse(
+            "home.html",
+            {"request": request, "logged_in": True, "error": str(e)},
+        )
+    return templates.TemplateResponse(
+        "playlist.html",
+        {
+            "request": request,
+            "playlist_name": playlist_name,
+            "track_count": len(tracks),
+            "tracks": tracks,
+        },
+    )
