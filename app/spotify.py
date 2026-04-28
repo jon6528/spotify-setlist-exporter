@@ -58,11 +58,13 @@ def _ms_to_duration(ms: int) -> str:
     return f"{seconds // 60}:{seconds % 60:02d}"
 
 
-def get_playlist_tracks(token: str, playlist_id: str) -> tuple:
+def get_playlist_tracks(token: str, playlist_id: str) -> tuple[str, list[dict]]:
     headers = {"Authorization": f"Bearer {token}"}
     response = requests.get(f"{SPOTIFY_API_BASE}/playlists/{playlist_id}", headers=headers)
     if response.status_code == 401:
         raise SpotifyAuthError("Spotify token expired or invalid")
+    if not response.ok:
+        raise ValueError(f"Could not load playlist (Spotify returned {response.status_code})")
     data = response.json()
     playlist_name = data["name"]
     tracks = []
@@ -84,6 +86,8 @@ def get_playlist_tracks(token: str, playlist_id: str) -> tuple:
             response = requests.get(next_url, headers=headers)
             if response.status_code == 401:
                 raise SpotifyAuthError("Spotify token expired or invalid")
+            if not response.ok:
+                raise ValueError(f"Could not load playlist page (Spotify returned {response.status_code})")
             page = response.json()
         else:
             page = None

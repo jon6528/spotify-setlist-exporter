@@ -151,3 +151,15 @@ def test_export_filename_uses_playlist_name(authed_client, monkeypatch):
 def test_export_redirects_if_no_session(client):
     resp = client.get("/export", follow_redirects=False)
     assert resp.status_code in (302, 307)
+
+
+def test_export_clears_session_on_auth_error(authed_client, monkeypatch):
+    _load_playlist(authed_client, monkeypatch)
+
+    def expired(token, playlist_id):
+        raise _spotify.SpotifyAuthError("expired")
+
+    monkeypatch.setattr("app.spotify.get_playlist_tracks", expired)
+    authed_client.get("/export", follow_redirects=False)
+    resp = authed_client.get("/")
+    assert "Login with Spotify" in resp.text

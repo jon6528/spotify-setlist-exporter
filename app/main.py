@@ -88,6 +88,8 @@ def export_csv(request: Request):
     except spotify.SpotifyAuthError:
         request.session.clear()
         return RedirectResponse("/")
+    except ValueError:
+        return RedirectResponse("/")
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow(["Track Number", "Track Name", "Artist", "Album", "Track Length"])
@@ -95,6 +97,7 @@ def export_csv(request: Request):
         writer.writerow([t["track_number"], t["name"], t["artist"], t["album"], t["duration"]])
     filename = re.sub(r"[^\w\s-]", "", playlist_name).strip().lower()
     filename = re.sub(r"\s+", "-", filename)
+    filename = filename or "playlist"
     output.seek(0)
     return StreamingResponse(
         iter([output.getvalue()]),
