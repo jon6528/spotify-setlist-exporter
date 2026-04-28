@@ -25,7 +25,7 @@ REDIRECT_URI = os.environ.get("REDIRECT_URI", "http://localhost:8000/callback")
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     logged_in = bool(request.session.get("access_token"))
-    return templates.TemplateResponse("home.html", {"request": request, "logged_in": logged_in})
+    return templates.TemplateResponse(request, "home.html", {"logged_in": logged_in})
 
 
 @app.get("/login")
@@ -61,13 +61,14 @@ def load_playlist(request: Request, playlist_url: str = Form(...)):
         return RedirectResponse("/", status_code=303)
     except ValueError as e:
         return templates.TemplateResponse(
+            request,
             "home.html",
-            {"request": request, "logged_in": True, "error": str(e)},
+            {"logged_in": True, "error": str(e)},
         )
     return templates.TemplateResponse(
+        request,
         "playlist.html",
         {
-            "request": request,
             "playlist_name": playlist_name,
             "track_count": len(tracks),
             "tracks": tracks,
