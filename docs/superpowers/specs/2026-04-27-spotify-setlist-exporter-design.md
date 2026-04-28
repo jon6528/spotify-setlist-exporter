@@ -64,7 +64,7 @@ Docker Container (port 8000)
 **Screen 2 — Playlist view (logged in):**
 - Top nav bar with playlist URL input field and "Load" button inline
 - Playlist name and track count shown below nav
-- Track table with columns: `#`, `Title`, `Artist`, `Album`, `⏱`
+- Track table with columns: `#` (album track number), `Title`, `Artist`, `Album`, `⏱`
   - Alternating row highlight on hover
   - Track number shown in green for the first/active row
 - Fixed bottom bar with "Export CSV" button (green, right-aligned)
@@ -75,9 +75,11 @@ Docker Container (port 8000)
 
 - **Auth flow:** Authorization Code Flow (not PKCE — server-side app)
 - **Scopes:** `playlist-read-private playlist-read-collaborative`
+- **Token expiry:** Spotify access tokens expire after 1 hour. On any Spotify API 401 response, the app clears the session and redirects the user to `/login`.
 - **Playlist fetch:** `GET /v1/playlists/{id}/tracks` — paginated, offset-based, 100 items per page. App loops until all pages are fetched.
+- **Export data:** After a successful playlist load, the playlist ID is stored in the session. `/export` reads the ID from the session, re-fetches all tracks from Spotify, and streams the CSV. No track data is stored server-side between requests.
 - **Fields extracted per track:**
-  - Track number (position in playlist, 1-indexed)
+  - Track number (the track's position on its album, from Spotify's `track_number` field — e.g., track 5 of 12)
   - Track name
   - Artist name (first artist if multiple)
   - Album name
@@ -91,9 +93,11 @@ Standard comma-separated, UTF-8 encoded, with header row.
 
 ```
 Track Number,Track Name,Artist,Album,Track Length
-1,Blinding Lights,The Weeknd,After Hours,3:20
+6,Blinding Lights,The Weeknd,After Hours,3:20
 2,Levitating,Dua Lipa,Future Nostalgia,3:23
 ```
+
+`Track Number` is the song's position on its album (e.g., "Blinding Lights" is track 6 on *After Hours*). Rows are ordered by their position in the playlist.
 
 - Filename: `{playlist-name}.csv` (lowercased, spaces replaced with hyphens)
 - Delivered as a file download (`Content-Disposition: attachment`)
