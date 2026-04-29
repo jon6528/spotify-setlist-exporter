@@ -64,7 +64,11 @@ def get_playlist_tracks(token: str, playlist_id: str) -> tuple[str, list[dict]]:
     if response.status_code == 401:
         raise SpotifyAuthError("Spotify token expired or invalid")
     if not response.ok:
-        raise ValueError(f"Could not load playlist (Spotify returned {response.status_code})")
+        try:
+            detail = response.json().get("error", {}).get("message", response.text)
+        except Exception:
+            detail = response.text
+        raise ValueError(f"Could not load playlist (Spotify returned {response.status_code}: {detail})")
     data = response.json()
     playlist_name = data["name"]
     tracks = []
