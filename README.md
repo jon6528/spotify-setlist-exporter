@@ -17,7 +17,7 @@ Look in your router's admin page or your NAS's network settings. It will be some
 1. Go to [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard)
 2. Click **Create app**
 3. Give it any name and description
-4. Set **Redirect URI** to: `http://192.168.1.100:8000/callback` (use your actual NAS IP)
+4. Set **Redirect URI** to: `http://192.168.1.100:8080/callback` (use your actual NAS IP)
 5. Save — copy your **Client ID** and **Client Secret**
 
 ### 3. Build the Docker image on your NAS
@@ -37,7 +37,7 @@ docker build -t spotify-setlist-exporter .
 In your NAS container manager (Container Manager, Container Station, Portainer, etc.):
 
 1. **Image:** `spotify-setlist-exporter` (the one you just built)
-2. **Port mapping:** host port `8000` → container port `8000`
+2. **Port mapping:** host port `8080` → container port `8000`
 3. **Environment variables — add all four:**
 
 | Variable | Value |
@@ -45,13 +45,13 @@ In your NAS container manager (Container Manager, Container Station, Portainer, 
 | `SPOTIFY_CLIENT_ID` | your Client ID from Step 2 |
 | `SPOTIFY_CLIENT_SECRET` | your Client Secret from Step 2 |
 | `SECRET_KEY` | any long random string (e.g. 40+ random characters) |
-| `REDIRECT_URI` | `http://192.168.1.100:8000/callback` (your NAS IP) |
+| `REDIRECT_URI` | `http://192.168.1.100:8080/callback` (your NAS IP) |
 
 4. Start the container.
 
 ### 5. Open the app
 
-Go to `http://192.168.1.100:8000` in your browser (use your actual NAS IP).
+Go to `http://192.168.1.100:8080` in your browser (use your actual NAS IP).
 
 > **Tip:** Bookmark the NAS IP address URL — anyone on your local network can use it from any device.
 
