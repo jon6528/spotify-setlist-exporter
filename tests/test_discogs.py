@@ -15,3 +15,11 @@ def test_normalize_collapses_whitespace():
 
 def test_normalize_handles_empty():
     assert _normalize("") == ""
+
+
+def test_normalize_strips_parenthetical_suffix():
+    assert _normalize("Heroes (2017 Remaster)") == "heroes 2017 remaster"
+
+
+def test_normalize_strips_accented_characters():
+    assert _normalize("café") == "cafe"
