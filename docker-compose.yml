@@ -8,3 +8,4 @@ services:
       - SPOTIFY_CLIENT_ID=
       - SPOTIFY_CLIENT_SECRET=
       - REDIRECT_URI=
+      - DISCOGS_TOKEN=
