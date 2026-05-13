@@ -1,7 +1,10 @@
+import logging
 import os
 import base64
 import requests
 from urllib.parse import urlparse, urlencode
+
+logger = logging.getLogger(__name__)
 
 
 def parse_playlist_id(url: str) -> str:
@@ -75,6 +78,14 @@ def get_playlist_tracks(token: str, playlist_id: str) -> tuple[str, list[dict]]:
     page = data.get("tracks")
     if page is None:
         raw_items = data.get("items")
+        logger.warning("DEBUG raw_items type: %s", type(raw_items).__name__)
+        if isinstance(raw_items, list) and raw_items:
+            first = raw_items[0]
+            logger.warning("DEBUG first item keys: %s", list(first.keys()) if isinstance(first, dict) else first)
+            logger.warning("DEBUG first item 'track' key: %s", first.get("track") if isinstance(first, dict) else "N/A")
+            logger.warning("DEBUG first item 'name' key: %s", first.get("name") if isinstance(first, dict) else "N/A")
+        elif isinstance(raw_items, dict):
+            logger.warning("DEBUG raw_items dict keys: %s", list(raw_items.keys()))
         if raw_items is None:
             raise ValueError("This playlist type is not supported — try a regular Spotify playlist.")
         if isinstance(raw_items, list):
