@@ -86,6 +86,13 @@ def get_playlist_tracks(token: str, playlist_id: str) -> tuple[str, list[dict]]:
             logger.warning("DEBUG first item 'name' key: %s", first.get("name") if isinstance(first, dict) else "N/A")
         elif isinstance(raw_items, dict):
             logger.warning("DEBUG raw_items dict keys: %s", list(raw_items.keys()))
+            inner = raw_items.get("items", [])
+            logger.warning("DEBUG inner items count: %s", len(inner))
+            if inner:
+                first = inner[0]
+                logger.warning("DEBUG first inner item keys: %s", list(first.keys()) if isinstance(first, dict) else first)
+                logger.warning("DEBUG first inner item 'track': %s", first.get("track") if isinstance(first, dict) else "N/A")
+                logger.warning("DEBUG first inner item 'name': %s", first.get("name") if isinstance(first, dict) else "N/A")
         if raw_items is None:
             raise ValueError("This playlist type is not supported — try a regular Spotify playlist.")
         if isinstance(raw_items, list):
