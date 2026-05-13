@@ -1,4 +1,5 @@
-from app.discogs import _normalize
+from unittest.mock import patch, Mock
+from app.discogs import _normalize, _lookup_vinyl_positions
 
 
 def test_normalize_lowercases():
@@ -27,10 +28,6 @@ def test_normalize_strips_accented_characters():
 
 def test_normalize_strips_underscores():
     assert _normalize("Side_A") == "side a"
-
-
-from unittest.mock import patch, Mock
-from app.discogs import _lookup_vinyl_positions
 
 
 def test_lookup_returns_empty_without_token(monkeypatch):
@@ -67,6 +64,15 @@ def test_lookup_returns_empty_on_api_error(monkeypatch):
     monkeypatch.setenv("DISCOGS_TOKEN", "tok")
     mock = Mock(ok=False)
     with patch("app.discogs.requests.get", return_value=mock):
+        assert _lookup_vinyl_positions("Patti Smith", "Horses") == {}
+
+
+def test_lookup_returns_empty_on_release_fetch_error(monkeypatch):
+    monkeypatch.setenv("DISCOGS_TOKEN", "tok")
+    search_mock = Mock(ok=True)
+    search_mock.json.return_value = {"results": [{"id": 123}]}
+    release_mock = Mock(ok=False)
+    with patch("app.discogs.requests.get", side_effect=[search_mock, release_mock]):
         assert _lookup_vinyl_positions("Patti Smith", "Horses") == {}
 
 
