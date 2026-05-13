@@ -135,3 +135,13 @@ def test_get_playlist_tracks_raises_auth_error_on_401():
         from app.spotify import get_playlist_tracks, SpotifyAuthError
         with pytest.raises(SpotifyAuthError):
             get_playlist_tracks(token="expired", playlist_id="abc")
+
+
+def test_get_playlist_tracks_raises_value_error_when_no_tracks_key():
+    mock_resp = Mock(status_code=200)
+    mock_resp.ok = True
+    mock_resp.json.return_value = {"name": "A Mix", "type": "playlist"}
+    with patch("app.spotify.requests.get", return_value=mock_resp):
+        from app.spotify import get_playlist_tracks
+        with pytest.raises(ValueError, match="not supported"):
+            get_playlist_tracks(token="tok", playlist_id="abc")

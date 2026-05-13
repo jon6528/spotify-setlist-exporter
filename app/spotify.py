@@ -72,7 +72,9 @@ def get_playlist_tracks(token: str, playlist_id: str) -> tuple[str, list[dict]]:
     data = response.json()
     playlist_name = data["name"]
     tracks = []
-    page = data["tracks"]
+    page = data.get("tracks")
+    if page is None:
+        raise ValueError("This playlist type is not supported — try a regular Spotify playlist.")
     while page:
         for item in page.get("items", []):
             t = item.get("track")
