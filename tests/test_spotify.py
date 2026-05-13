@@ -166,6 +166,35 @@ def test_get_playlist_tracks_handles_flat_items_wrapped():
     assert tracks[0]["name"] == "Song A"
 
 
+def test_get_playlist_tracks_handles_item_key_instead_of_track():
+    inner_track = {
+        "name": "Song A",
+        "track_number": 1,
+        "duration_ms": 180000,
+        "artists": [{"name": "Artist A"}],
+        "album": {"name": "Album A"},
+    }
+    paging = {
+        "href": "https://api.spotify.com/v1/playlists/abc/tracks",
+        "items": [{"added_at": "2024-01-01", "added_by": {}, "is_local": False, "primary_color": None, "item": inner_track, "video_thumbnail": {}}],
+        "limit": 100,
+        "next": None,
+        "offset": 0,
+        "previous": None,
+        "total": 1,
+    }
+    playlist_data = {"name": "My Playlist", "tracks": None, "items": paging}
+    mock_resp = Mock(status_code=200)
+    mock_resp.ok = True
+    mock_resp.json.return_value = playlist_data
+    with patch("app.spotify.requests.get", return_value=mock_resp):
+        from app.spotify import get_playlist_tracks
+        name, tracks = get_playlist_tracks(token="tok", playlist_id="abc")
+    assert name == "My Playlist"
+    assert len(tracks) == 1
+    assert tracks[0]["name"] == "Song A"
+
+
 def test_get_playlist_tracks_handles_flat_items_direct():
     direct_track = {
         "name": "Song A",

@@ -1,10 +1,7 @@
-import logging
 import os
 import base64
 import requests
 from urllib.parse import urlparse, urlencode
-
-logger = logging.getLogger(__name__)
 
 
 def parse_playlist_id(url: str) -> str:
@@ -78,21 +75,6 @@ def get_playlist_tracks(token: str, playlist_id: str) -> tuple[str, list[dict]]:
     page = data.get("tracks")
     if page is None:
         raw_items = data.get("items")
-        logger.warning("DEBUG raw_items type: %s", type(raw_items).__name__)
-        if isinstance(raw_items, list) and raw_items:
-            first = raw_items[0]
-            logger.warning("DEBUG first item keys: %s", list(first.keys()) if isinstance(first, dict) else first)
-            logger.warning("DEBUG first item 'track' key: %s", first.get("track") if isinstance(first, dict) else "N/A")
-            logger.warning("DEBUG first item 'name' key: %s", first.get("name") if isinstance(first, dict) else "N/A")
-        elif isinstance(raw_items, dict):
-            logger.warning("DEBUG raw_items dict keys: %s", list(raw_items.keys()))
-            inner = raw_items.get("items", [])
-            logger.warning("DEBUG inner items count: %s", len(inner))
-            if inner:
-                first = inner[0]
-                logger.warning("DEBUG first inner item keys: %s", list(first.keys()) if isinstance(first, dict) else first)
-                logger.warning("DEBUG first inner item 'track': %s", first.get("track") if isinstance(first, dict) else "N/A")
-                logger.warning("DEBUG first inner item 'name': %s", first.get("name") if isinstance(first, dict) else "N/A")
         if raw_items is None:
             raise ValueError("This playlist type is not supported — try a regular Spotify playlist.")
         if isinstance(raw_items, list):
@@ -101,7 +83,7 @@ def get_playlist_tracks(token: str, playlist_id: str) -> tuple[str, list[dict]]:
             page = raw_items
     while page:
         for item in page.get("items", []):
-            t = item.get("track") or (item if item.get("name") else None)
+            t = item.get("track") or item.get("item") or (item if item.get("name") else None)
             if not t:
                 continue
             tracks.append({
