@@ -11,7 +11,7 @@ def _normalize(name: str) -> str:
     name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode("ascii")
     name = name.lower()
     name = name.replace("_", " ")
-    name = re.sub(r"[^a-zA-Z0-9\s]", "", name)
+    name = re.sub(r"[^a-z0-9\s]", "", name)
     name = re.sub(r"\s+", " ", name).strip()
     return name
 
