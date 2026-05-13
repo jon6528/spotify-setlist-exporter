@@ -54,3 +54,12 @@ def _lookup_vinyl_positions(artist: str, album: str) -> dict[str, str]:
         }
     except Exception:
         return {}
+
+
+def enrich_tracks(tracks: list[dict]) -> None:
+    cache: dict[tuple[str, str], dict[str, str]] = {}
+    for track in tracks:
+        key = (track["artist"], track["album"])
+        if key not in cache:
+            cache[key] = _lookup_vinyl_positions(track["artist"], track["album"])
+        track["side"] = cache[key].get(_normalize(track["name"]))
