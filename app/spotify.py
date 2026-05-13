@@ -83,7 +83,7 @@ def get_playlist_tracks(token: str, playlist_id: str) -> tuple[str, list[dict]]:
             page = raw_items
     while page:
         for item in page.get("items", []):
-            t = item.get("track")
+            t = item.get("track") or (item if item.get("name") else None)
             if not t:
                 continue
             tracks.append({

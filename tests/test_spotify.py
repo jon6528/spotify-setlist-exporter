@@ -147,11 +147,37 @@ def test_get_playlist_tracks_raises_value_error_when_no_tracks_key():
             get_playlist_tracks(token="tok", playlist_id="abc")
 
 
-def test_get_playlist_tracks_handles_flat_items_response():
+def test_get_playlist_tracks_handles_flat_items_wrapped():
     playlist_data = {
         "name": "My Playlist",
         "tracks": None,
         "items": [_make_item("Song A", "Artist A", "Album A", 1, 180000)],
+        "next": None,
+        "type": "playlist",
+    }
+    mock_resp = Mock(status_code=200)
+    mock_resp.ok = True
+    mock_resp.json.return_value = playlist_data
+    with patch("app.spotify.requests.get", return_value=mock_resp):
+        from app.spotify import get_playlist_tracks
+        name, tracks = get_playlist_tracks(token="tok", playlist_id="abc")
+    assert name == "My Playlist"
+    assert len(tracks) == 1
+    assert tracks[0]["name"] == "Song A"
+
+
+def test_get_playlist_tracks_handles_flat_items_direct():
+    direct_track = {
+        "name": "Song A",
+        "track_number": 1,
+        "duration_ms": 180000,
+        "artists": [{"name": "Artist A"}],
+        "album": {"name": "Album A"},
+    }
+    playlist_data = {
+        "name": "My Playlist",
+        "tracks": None,
+        "items": [direct_track],
         "next": None,
         "type": "playlist",
     }
