@@ -1,10 +1,7 @@
-import logging
 import os
 import base64
 import requests
 from urllib.parse import urlparse, urlencode
-
-logger = logging.getLogger(__name__)
 
 
 def parse_playlist_id(url: str) -> str:
@@ -73,13 +70,17 @@ def get_playlist_tracks(token: str, playlist_id: str) -> tuple[str, list[dict]]:
             detail = response.text
         raise ValueError(f"Could not load playlist (Spotify returned {response.status_code}: {detail})")
     data = response.json()
-    logger.warning("Spotify playlist response keys: %s", list(data.keys()))
-    logger.warning("Spotify tracks field value: %s", data.get("tracks"))
     playlist_name = data["name"]
     tracks = []
     page = data.get("tracks")
     if page is None:
-        raise ValueError("This playlist type is not supported — try a regular Spotify playlist.")
+        raw_items = data.get("items")
+        if raw_items is None:
+            raise ValueError("This playlist type is not supported — try a regular Spotify playlist.")
+        if isinstance(raw_items, list):
+            page = {"items": raw_items, "next": data.get("next")}
+        else:
+            page = raw_items
     while page:
         for item in page.get("items", []):
             t = item.get("track")
