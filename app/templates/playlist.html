@@ -16,6 +16,7 @@
 <table class="track-table">
   <thead>
     <tr>
+      <th class="track-side">Side</th>
       <th class="track-num">#</th>
       <th>Title</th>
       <th>Artist</th>
@@ -26,6 +27,7 @@
   <tbody>
   {% for t in tracks %}
   <tr>
+    <td class="track-side">{{ t.side or '' }}</td>
     <td class="track-num">{{ t.track_number }}</td>
     <td class="track-name">{{ t.name }}</td>
     <td class="track-artist">{{ t.artist }}</td>
