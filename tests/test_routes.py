@@ -133,7 +133,7 @@ def test_export_returns_csv(authed_client, monkeypatch):
     resp = authed_client.get("/export")
     assert resp.status_code == 200
     assert resp.headers["content-type"].startswith("text/csv")
-    assert "Track Number,Track Name,Artist,Album,Track Length" in resp.text
+    assert "Side,Track Number,Track Name,Artist,Album,Track Length" in resp.text
     assert "Blinding Lights" in resp.text
     assert "6" in resp.text
 

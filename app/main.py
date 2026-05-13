@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import spotify
+from app import spotify, discogs
 
 load_dotenv()
 
@@ -54,6 +54,7 @@ def load_playlist(request: Request, playlist_url: str = Form(...)):
     try:
         playlist_id = spotify.parse_playlist_id(playlist_url)
         playlist_name, tracks = spotify.get_playlist_tracks(token=token, playlist_id=playlist_id)
+        discogs.enrich_tracks(tracks)
         request.session["playlist_id"] = playlist_id
         request.session["playlist_name"] = playlist_name
     except spotify.SpotifyAuthError:
@@ -90,11 +91,19 @@ def export_csv(request: Request):
         return RedirectResponse("/")
     except ValueError:
         return RedirectResponse("/")
+    discogs.enrich_tracks(tracks)
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Track Number", "Track Name", "Artist", "Album", "Track Length"])
+    writer.writerow(["Side", "Track Number", "Track Name", "Artist", "Album", "Track Length"])
     for t in tracks:
-        writer.writerow([t["track_number"], t["name"], t["artist"], t["album"], t["duration"]])
+        writer.writerow([
+            t.get("side") or "",
+            t["track_number"],
+            t["name"],
+            t["artist"],
+            t["album"],
+            t["duration"],
+        ])
     filename = re.sub(r"[^\w\s-]", "", playlist_name).strip().lower()
     filename = re.sub(r"\s+", "-", filename)
     filename = filename or "playlist"
