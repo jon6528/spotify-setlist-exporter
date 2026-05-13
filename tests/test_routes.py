@@ -67,6 +67,7 @@ def test_playlist_renders_track_table(authed_client, monkeypatch):
         "app.spotify.get_playlist_tracks",
         lambda token, playlist_id: ("Today's Top Hits", MOCK_TRACKS),
     )
+    monkeypatch.setattr("app.discogs.enrich_tracks", lambda tracks: None)
     resp = authed_client.post(
         "/playlist",
         data={"playlist_url": "https://open.spotify.com/playlist/playlist123"},
@@ -91,6 +92,7 @@ def test_playlist_shows_error_on_invalid_url(authed_client, monkeypatch):
         raise ValueError("Invalid Spotify playlist URL")
 
     monkeypatch.setattr("app.spotify.parse_playlist_id", bad_parse)
+    monkeypatch.setattr("app.discogs.enrich_tracks", lambda tracks: None)
     resp = authed_client.post(
         "/playlist", data={"playlist_url": "https://example.com/not-spotify"}
     )
@@ -105,6 +107,7 @@ def test_playlist_clears_session_on_auth_error(authed_client, monkeypatch):
         raise _spotify.SpotifyAuthError("expired")
 
     monkeypatch.setattr("app.spotify.get_playlist_tracks", expired)
+    monkeypatch.setattr("app.discogs.enrich_tracks", lambda tracks: None)
     resp = authed_client.post(
         "/playlist",
         data={"playlist_url": "https://open.spotify.com/playlist/abc"},
@@ -119,6 +122,7 @@ def _load_playlist(authed_client, monkeypatch):
         "app.spotify.get_playlist_tracks",
         lambda token, playlist_id: ("My Jams", MOCK_TRACKS),
     )
+    monkeypatch.setattr("app.discogs.enrich_tracks", lambda tracks: None)
     authed_client.post(
         "/playlist", data={"playlist_url": "https://open.spotify.com/playlist/abc123"}
     )
